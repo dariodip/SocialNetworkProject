@@ -1,4 +1,5 @@
-
+import graphanalysis.loader as loader
 
 if __name__ == '__main__':
-    print("Hi!")
+    g = loader.load('./resources/dataset/wiki-Vote.txt', is_directed=True)
+
