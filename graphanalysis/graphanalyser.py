@@ -1,6 +1,7 @@
 import math
 import networkx as nx
 import networkx.algorithms.approximation as approx
+from networkx.algorithms import community
 
 
 class GraphAnalyser(object):
@@ -12,6 +13,8 @@ class GraphAnalyser(object):
         self.__graph_props()
         self.__basic_info()
         print(self.__data_dict)
+        self.__communities_props()
+        print(list(self.__communities))
 
     def __basic_info(self):
         self.__data_dict['Edges'] = self.__g.number_of_edges()
@@ -37,3 +40,6 @@ class GraphAnalyser(object):
         # self.__data_dict['Average Clustering'] = nx.average_clustering(self.__g) TODO
         self.__data_dict['Max Clique Count'] = len(approx.max_clique(self.__g))
         self.__data_dict['Max Independent Set Count'] = len(approx.maximum_independent_set(self.__g))
+
+    def __communities_props(self):
+        self.__communities = community.girvan_newman(self.__g)
