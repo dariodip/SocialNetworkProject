@@ -12,9 +12,7 @@ class GraphAnalyser(object):
         self.__degree_stats()
         self.__graph_props()
         self.__basic_info()
-        print(self.__data_dict)
         self.__communities_props()
-        print(list(self.__communities))
 
     def __basic_info(self):
         self.__data_dict['Edges'] = self.__g.number_of_edges()
@@ -42,4 +40,14 @@ class GraphAnalyser(object):
         self.__data_dict['Max Independent Set Count'] = len(approx.maximum_independent_set(self.__g))
 
     def __communities_props(self):
-        self.__communities = community.girvan_newman(self.__g)
+        self.__communities = list(community.girvan_newman(self.__g))
+        self.__best_community = max(self.__communities, key=lambda c: community.performance(self.__g, c))
+
+    def get_properties(self) -> dict:
+        return {
+            "properties": self.__data_dict,
+            "communities": {
+                "all": self.__communities,
+                "best": self.__best_community
+            }
+        }
