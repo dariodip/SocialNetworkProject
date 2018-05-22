@@ -1,4 +1,5 @@
 import math
+import json
 import networkx as nx
 import networkx.algorithms.approximation as approx
 from networkx.algorithms import community
@@ -41,8 +42,8 @@ class GraphAnalyser(object):
         self.__data_dict['Max Independent Set Count'] = len(approx.maximum_independent_set(self.__g))
 
     def __communities_props(self):
-        self.__communities = list(community.girvan_newman(self.__g))
-        self.__best_community = max(self.__communities, key=lambda c: community.performance(self.__g, c))
+        communities = list(community.girvan_newman(self.__g))
+        self.__communities = [list(comm) for comm in max(communities, key=lambda c: community.performance(self.__g, c))]
 
     def __link_analysis(self):
         self.__pagerank = self.pagerank(self.__g)
@@ -62,10 +63,11 @@ class GraphAnalyser(object):
     def get_properties(self) -> dict:
         return {
             "properties": self.__data_dict,
-            "communities": {
-                "all": self.__communities,
-                "best": self.__best_community
-            },
+            "communities": self.__communities,
             "pagerank": self.__pagerank,
             "hits": self.__hits
         }
+
+    def save_props(self, filename):
+        with open(filename, "w") as f:
+            json.dump(self.get_properties(), f)
