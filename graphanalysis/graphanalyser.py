@@ -13,6 +13,7 @@ class GraphAnalyser(object):
         self.__graph_props()
         self.__basic_info()
         self.__communities_props()
+        self.__link_analysis()
 
     def __basic_info(self):
         self.__data_dict['Edges'] = self.__g.number_of_edges()
@@ -43,11 +44,28 @@ class GraphAnalyser(object):
         self.__communities = list(community.girvan_newman(self.__g))
         self.__best_community = max(self.__communities, key=lambda c: community.performance(self.__g, c))
 
+    def __link_analysis(self):
+        self.__pagerank = self.pagerank(self.__g)
+        self.__hits = self.hits(self.__g)
+
+    def pagerank(self, g, alpha=0.85, personalization=None, max_iter=100, tol=1e-06, nstart=None, weight='weight',
+                 dangling=None):
+        return nx.pagerank(g, alpha, personalization, max_iter, tol, nstart, weight, dangling)
+
+    def hits(self, g, max_iter=100, tol=1e-08, nstart=None, normalized=True):
+        hubs, authorities = nx.hits(g, max_iter, tol, nstart, normalized)
+        return {
+            "hub": hubs,
+            "authorities": authorities,
+        }
+
     def get_properties(self) -> dict:
         return {
             "properties": self.__data_dict,
             "communities": {
                 "all": self.__communities,
                 "best": self.__best_community
-            }
+            },
+            "pagerank": self.__pagerank,
+            "hits": self.__hits
         }
