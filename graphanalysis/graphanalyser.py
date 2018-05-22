@@ -4,6 +4,7 @@ import networkx as nx
 import networkx.algorithms.approximation as approx
 import community
 
+from networkx.algorithms import cluster
 
 class GraphAnalyser(object):
 
@@ -40,6 +41,9 @@ class GraphAnalyser(object):
         # self.__data_dict['Average Clustering'] = nx.average_clustering(self.__g) TODO
         self.__data_dict['Max Clique Count'] = len(approx.max_clique(self.__g))
         self.__data_dict['Max Independent Set Count'] = len(approx.maximum_independent_set(self.__g))
+        if not nx.is_directed(self.__g):
+            self.__data_dict['Average Clustering'] = cluster.average_clustering(self.__g)
+            self.__clustering_coefficients = cluster.clustering(self.__g)
 
     def __communities_props(self):
         self.__communities = community.best_partition(nx.to_undirected(self.__g))
@@ -60,12 +64,16 @@ class GraphAnalyser(object):
         }
 
     def get_properties(self) -> dict:
-        return {
+        toReturn = {
             "properties": self.__data_dict,
             "communities": self.__communities,
             "pagerank": self.__pagerank,
             "hits": self.__hits
         }
+        if not nx.is_directed(self.__g):
+            toReturn["clustering coefficients"]: self.__clustering_coefficients
+
+        return toReturn
 
     def save_props(self, filename):
         with open(filename, "w") as f:
