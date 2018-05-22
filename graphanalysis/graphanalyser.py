@@ -2,7 +2,7 @@ import math
 import json
 import networkx as nx
 import networkx.algorithms.approximation as approx
-from networkx.algorithms import community
+import community
 
 
 class GraphAnalyser(object):
@@ -42,8 +42,7 @@ class GraphAnalyser(object):
         self.__data_dict['Max Independent Set Count'] = len(approx.maximum_independent_set(self.__g))
 
     def __communities_props(self):
-        communities = list(community.girvan_newman(self.__g))
-        self.__communities = [list(comm) for comm in max(communities, key=lambda c: community.performance(self.__g, c))]
+        self.__communities = community.best_partition(nx.to_undirected(self.__g))
 
     def __link_analysis(self):
         self.__pagerank = self.pagerank(self.__g)
