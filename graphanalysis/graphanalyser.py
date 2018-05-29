@@ -11,11 +11,22 @@ class GraphAnalyser(object):
     def __init__(self, g: nx.Graph):
         self.__g = g
         self.__data_dict = dict()
+        self.__communities = dict()
+        self.__pagerank = dict()
+        self.__hits = dict()
+        self.__conn_comp = list()
+        self.__bridges = list()
+        self.__local_bridges = list()
+        self.__neigh_overlap = dict()
+        self.__clustering_coefficients = dict()
+
         self.__degree_stats()
         self.__graph_props()
         self.__basic_info()
         self.__communities_props()
         self.__link_analysis()
+        self.__connected_components()
+        self.__find_bridges_overlap()
 
     def __basic_info(self):
         self.__data_dict['Edges'] = self.__g.number_of_edges()
@@ -28,16 +39,25 @@ class GraphAnalyser(object):
         min_degree_name, min_degree = min(degrees, key=lambda i: (i[1], i[0]))
         names, degrees = zip(*degrees)
         avg_degree = sum(degrees)/len(degrees)
+        degree_variance = sum(map(lambda x: (x - avg_degree)**2, degrees)) / len(degrees)
         self.__data_dict['Max Degree'] = max_degree
         self.__data_dict['Max Degree Id'] = max_degree_name
         self.__data_dict['Min Degree'] = min_degree
         self.__data_dict['Min Degree Id'] = min_degree_name
         self.__data_dict['Avg Degree'] = avg_degree
+        self.__data_dict['Degree variance'] = degree_variance
 
     def __graph_props(self):
-        strongly_conn = self.__data_dict['Strongly Connected'] = nx.is_strongly_connected(self.__g)
-        self.__data_dict['Diameter'] = nx.diameter(self.__g) if strongly_conn else math.inf
-        self.__data_dict['Radius'] = nx.radius(self.__g) if strongly_conn else math.inf
+        if nx.is_directed(self.__g):
+            self.__data_dict['Type'] = "Directed"
+            conn = self.__data_dict['Strongly Connected'] = nx.is_strongly_connected(self.__g)
+        else:
+            self.__data_dict['Type'] = "Undirected"
+            conn = self.__data_dict['Connected'] = nx.is_connected(self.__g)
+
+        self.__data_dict['Diameter'] = nx.diameter(self.__g) if conn else math.inf
+        self.__data_dict['Radius'] = nx.radius(self.__g) if conn else math.inf
+        self.__data_dict["centered_nodes"] = list(nx.center(self.__g)) if conn else math.inf
         # self.__data_dict['Average Clustering'] = nx.average_clustering(self.__g) TODO
         self.__data_dict['Max Clique Count'] = len(approx.max_clique(self.__g))
         self.__data_dict['Max Independent Set Count'] = len(approx.maximum_independent_set(self.__g))
@@ -47,10 +67,14 @@ class GraphAnalyser(object):
 
     def __communities_props(self):
         self.__communities = community.best_partition(nx.to_undirected(self.__g))
+        self.__data_dict["communities_count"] = len(set(self.__communities.values()))
 
     def __link_analysis(self):
         self.__pagerank = self.pagerank(self.__g)
         self.__hits = self.hits(self.__g)
+
+    def __connected_components(self):
+        self.__conn_comp = list(map(list, nx.connected_components(self.__g)))
 
     def pagerank(self, g, alpha=0.85, personalization=None, max_iter=100, tol=1e-06, nstart=None, weight='weight',
                  dangling=None):
@@ -63,10 +87,32 @@ class GraphAnalyser(object):
             "authorities": authorities,
         }
 
+    def __find_bridges_overlap(self):
+        if nx.is_directed(self.__g):
+            raise TypeError("Not implemented for directed graphs")
+
+        self.__bridges = list(nx.bridges(self.__g))
+        for edge in self.__g.edges:
+            n1, n2 = edge[0], edge[1]
+
+            comm_neighbors = len(list(nx.common_neighbors(self.__g, n1, n2)))
+            if comm_neighbors == 0:
+                self.__local_bridges.append(edge)
+
+            neighbor_n1 = set(self.__g.neighbors(n1))
+            neighbor_n2 = set(self.__g.neighbors(n2))
+
+            total_neighbors = len(neighbor_n1 | neighbor_n2)
+            self.__neigh_overlap[edge] = comm_neighbors / total_neighbors
+
     def get_properties(self) -> dict:
         toReturn = {
             "properties": self.__data_dict,
             "communities": self.__communities,
+            "connected components": self.__conn_comp,
+            "bridges": self.__bridges,
+            "local bridges": self.__local_bridges,
+            "neighborhood overlap": self.__neigh_overlap,
             "pagerank": self.__pagerank,
             "hits": self.__hits
         }
