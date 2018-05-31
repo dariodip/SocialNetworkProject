@@ -5,7 +5,7 @@ import graphanalysis.loader as loader
 
 class GraphAnalysisLoaderTest(unittest.TestCase):
     def test_loader(self):
-        dataset = "../resources/dataset/wiki-Vote.txt"
+        dataset = "resources/dataset/wiki-Vote.txt"
 
         exists = os.path.exists(dataset)
         self.assertTrue(exists, "{} does not exists".format(dataset))  # Check if we give the right path
