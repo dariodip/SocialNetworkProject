@@ -6,6 +6,7 @@ import pandas as pd
 
 np.seterr(divide='ignore', invalid='ignore')
 
+
 def get_node_degree(g):
     if nx.is_directed(g):
         degree = [t[1] for t in g.in_degree]
@@ -14,14 +15,17 @@ def get_node_degree(g):
 
     return degree
 
+
 def get_powerlaw_distribution_alpha(g):
     degree = get_node_degree(g)
 
     fit = powerlaw.Fit(degree, xmin=min(degree), xmax=max(degree))
     return fit.power_law.alpha
 
-def plot_degree_powerlaw_distribution(g):
+
+def plot_degree_powerlaw_distribution(g, name: str, show=False):
     # Degree frequencies
+    fig = plt.figure()
     degree = pd.Series(get_node_degree(g))
     degree_count = degree.value_counts()
     degree_freq = {d: degree_count[d]/sum(degree_count) for d in degree_count.index}
@@ -35,4 +39,6 @@ def plot_degree_powerlaw_distribution(g):
     xvalue = np.linspace(min(degree_count.index), max(degree_count.index), 100)
     yvalue = list(map(lambda x: x**(-alpha), xvalue))
     plt.plot(xvalue, yvalue, 'b-')
-    plt.show()
+    plt.savefig("resources/results/img/{}.png".format(name), dpi=fig.dpi)
+    if show:
+        plt.show()

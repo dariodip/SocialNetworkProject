@@ -1,8 +1,10 @@
 import json
 import networkx as nx
 import community
+import numpy as np
 
 from networkx.algorithms import cluster
+
 
 class GraphAnalyser(object):
 
@@ -53,6 +55,10 @@ class GraphAnalyser(object):
         self.__data_dict['Min Degree Id'] = min_degree_name
         self.__data_dict['Avg Degree'] = avg_degree
         self.__data_dict['Degree variance'] = degree_variance
+        degrees_array = np.array(degrees)
+        self.__data_dict['Median'] = np.ceil(np.percentile(degrees_array, 50))
+        self.__data_dict['60th Percentile'] = np.ceil(np.percentile(degrees_array, 60))
+        self.__data_dict['70th Percentile'] = np.ceil(np.percentile(degrees_array, 70))
 
     def __graph_props(self):
         if self.__data_dict["Connected"]:
@@ -112,7 +118,7 @@ class GraphAnalyser(object):
             neighbor_n2 = set(self.__g.neighbors(n2))
 
             total_neighbors = len(neighbor_n1 | neighbor_n2)
-            self.__neigh_overlap[edge] = comm_neighbors / total_neighbors
+            self.__neigh_overlap["{}-{}".format(n1, n2)] = comm_neighbors / total_neighbors
 
     def get_properties(self) -> dict:
         toReturn = {

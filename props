@@ -1,0 +1,35 @@
+Nodes
+Edges
+Directed/Undirected
+Connected
+Communities Count
+Self Loops
+Diameter
+Radius
+Centered Nodes Count
+Max Degree
+Min Degree
+Avg Degree
+Degree Variance
+Max Degree Id
+Min Degree Id
+Degree Median
+Degree 60th Percentile
+Degree 70th Percentile
+Max Clustering
+Min Clustering
+Average Clustering
+Bridges Count
+Target Set Count Median
+Target Set Count 60th Perc
+Target Set Count 70th Perc
+Hits-Hubs
+Hits-Authorities
+Connected Components Count
+Pagerank Max
+Pagerank Max Id
+Pagerank Max Degree
+Pagerank Min
+Pagerank Min Id
+Pagerank Min Degree
+Pagerank Avg
