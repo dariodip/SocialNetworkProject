@@ -105,7 +105,7 @@ def main():
     tasks = dict()
     cleared_dicts = dict()
     with ProcessPoolExecutor(max_workers=3) as executor:
-        files = [f for f in os.listdir(graph_path) if f.startswith('CA-Gr')]
+        files = [f for f in os.listdir(graph_path)]
         for file in files:
             task = executor.submit(get_stats, file)
             tasks[task] = file
