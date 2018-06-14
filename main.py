@@ -3,6 +3,7 @@ import graphanalysis.graphanalyser as ga
 import os
 import logging
 import pandas as pd
+from pandas.io.json import json_normalize
 import json
 
 from graphanalysis import influence
@@ -15,15 +16,69 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.setLevel(logging.DEBUG)
 
+
+def clear_dict(d):
+    nd = dict()
+    nd["Nodes"] = d["properties"]["Nodes"]
+    nd["Edges"] = d["properties"]["Edges"]
+    nd["Directed/Undirected"] = d["properties"]["Type"]
+    nd["Connected"] = d["properties"]["Connected"]
+    nd["Communities Count"] = d["properties"]["Communities count"]
+    nd["Self Loops"] = d["properties"]["Self Loops"]
+    nd["Diameter"] = d["properties"]["Diameter"]
+    nd["Radius"] = d["properties"]["Radius"]
+    nd["Centered Nodes Count"] = len(d["properties"]["Centered nodes"])
+    nd["Max Degree"] = d["properties"]["Max Degree"]
+    nd["Min Degree"] = d["properties"]["Min Degree"]
+    nd["Avg Degree"] = round(d["properties"]["Avg Degree"], 3)
+    nd["Degree Variance"] = round(d["properties"]["Degree variance"], 3)
+    nd["Max Degree Id"] = d["properties"]["Max Degree Id"]
+    nd["Min Degree Id"] = d["properties"]["Max Degree Id"]
+    nd["Degree Median"] = d["properties"]["Median"]
+    nd["Degree 60th Percentile"] = int(d["properties"]["60th Percentile"])
+    nd["Degree 70th Percentile"] = int(d["properties"]["70th Percentile"])
+    nd["Max Clustering"] = round(max(d["clustering coefficients"].values()), 3)
+    nd["Min Clustering"] = round(min(d["clustering coefficients"].values()), 3)
+    nd["Average Clustering"] = round(d["properties"]["Average Clustering"], 3)
+    nd["Bridges Count"] = len(d["bridges"])
+    nd["Target Set Count Median"] = len(d["target set"]["Median"])
+    nd["Target Set Count 60th Perc"] = len(d["target set"]["60th Percentile"])
+    nd["Target Set Count 70th Perc"] = len(d["target set"]["70th Percentile"])
+    nd["Hits-Hub Min"] = round(min(d["hits"]["hub"].values()), 3)
+    nd["Hits-Hub Max"] = round(max(d["hits"]["hub"].values()), 3)
+    nd["Hits-Hub Avg"] = round(sum(d["hits"]["hub"].values())/len(d["hits"]["hub"]), 3)
+    nd["Hits-Authorities Min"] = round(min(d["hits"]["authorities"].values()), 3)
+    nd["Hits-Authorities Max"] = round(max(d["hits"]["authorities"].values()), 3)
+    nd["Hits-Authorities Avg"] = round(sum(d["hits"]["authorities"].values())/len(d["hits"]["authorities"]), 3)
+    nd["Connected Components Count"] = len(d["connected components"])
+    nd["Pagerank Max"] = round(max(d["pagerank"].values()), 3)
+    nd["Pagerank Max Id"] = max(d["pagerank"], key=d["pagerank"].get)
+    nd["Pagerank Min"] = round(max(d["pagerank"].values()), 3)
+    nd["Pagerank Min Id"] = min(d["pagerank"], key=d["pagerank"].get)
+    nd["Pagerank Avg"] = round(sum(d["pagerank"].values())/len(d["pagerank"]), 3)
+    return nd
+
+
+def create_dataframe(d):
+    nds = pd.DataFrame()
+    for k, v in d.items():
+        nv = v
+        nv["Name"] = k
+        nds = nds.append(json_normalize(v))
+    return nds.transpose()
+
+
+
 if __name__ == '__main__':
 
     graph_path = './resources/dataset/'
 
-    for file in [f for f in os.listdir(graph_path) if f.startswith('CA-Gr')]:
+    cleared_dict = dict()
+    for file in [f for f in os.listdir(graph_path) if f.startswith('CA-')]:
         graph_name = file.split('.')[0]
         full_graph_path = os.path.join('.', 'resources', 'dataset', file)
         logger.info("Loading " + graph_name)
-        g = loader.load(full_graph_path, is_directed=False, sep="\t")
+        g = loader.load(full_graph_path, is_directed=False, sep=" ")
         logger.info("Starting analysis on " + graph_name)
         graph_dict = ga.GraphAnalyser(g).get_properties()
 
@@ -45,3 +100,6 @@ if __name__ == '__main__':
             json.dump(graph_dict, f, indent=0)
             logger.info("dirty-{}.json saved".format(graph_name))
 
+        cleared_dict[graph_name] = clear_dict(graph_dict)
+
+    create_dataframe(cleared_dict).to_latex("table.tex")
