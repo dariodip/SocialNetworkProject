@@ -53,7 +53,6 @@ def plot_degree_powerlaw_distribution(g, name: str, show=False):
     plt.ylabel(r"$f_k$")
     alpha_exponent = round(-alpha, 3)
     plt.title(r'Distribuzione dei gradi e funzione $f(k) = k^{' + str(alpha_exponent) + r'}$')
-
     plt.savefig("resources/results/img/{}.png".format(name), dpi=fig.dpi)
 
     if show:

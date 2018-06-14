@@ -68,7 +68,7 @@ class GraphAnalyser(object):
         else:
             self.__data_dict['Diameter'] = None
             self.__data_dict['Radius'] = None
-            self.__data_dict["Centered nodes"] = None
+            self.__data_dict["Centered nodes"] = []
 
         if self.__data_dict["Type"] == "Undirected":
             self.__data_dict['Average Clustering'] = nx.average_clustering(self.__g)

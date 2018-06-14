@@ -5,6 +5,8 @@ import logging
 import pandas as pd
 from pandas.io.json import json_normalize
 import json
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import traceback
 
 from graphanalysis import influence
 from graphanalysis.powerlaw import plot_degree_powerlaw_distribution
@@ -68,38 +70,59 @@ def create_dataframe(d):
     return nds.transpose()
 
 
+def get_stats(file):
+    graph_name = file.split('.')[0]
+    full_graph_path = os.path.join('.', 'resources', 'dataset', file)
+    logger.info("Loading " + graph_name)
+    g = loader.load(full_graph_path, is_directed=False, sep="\t")
+    logger.info("Starting analysis on " + graph_name)
+    graph_dict = ga.GraphAnalyser(g).get_properties()
+    influence_dict = dict()
+    logger.info("Influence Targer Set Selection on median on " + graph_name)
+    influence_dict['Median'] = list(influence.generate_target_set_selection(g, graph_dict['properties']['Median']))
+    logger.info("Influence Targer Set Selection on 60th percentile on " + graph_name)
+    influence_dict['60th Percentile'] = list(
+        influence.generate_target_set_selection(g, graph_dict['properties']['60th Percentile']))
+    logger.info("Influence Targer Set Selection on 70th percentile on " + graph_name)
+    influence_dict['70th Percentile'] = list(
+        influence.generate_target_set_selection(g, graph_dict['properties']['70th Percentile']))
+    graph_dict['target set'] = influence_dict
+    # Powerlaw graph
+    logger.info("Plotting Power Law")
+    return g, graph_name, graph_dict, clear_dict(graph_dict)
+
+
+def write_to_file(g, graph_name, graph_dict):
+    plot_degree_powerlaw_distribution(g, graph_name)
+    with open('./resources/results/{}.json'.format(graph_name), 'w+') as f:
+        json.dump(graph_dict, f, indent=0)
+        logger.info("dirty-{}.json saved".format(graph_name))
+
+
+
+def main():
+    graph_path = './resources/dataset/'
+    tasks = dict()
+    cleared_dicts = dict()
+    with ProcessPoolExecutor(max_workers=3) as executor:
+        files = [f for f in os.listdir(graph_path) if f.startswith('CA-Gr')]
+        for file in files:
+            task = executor.submit(get_stats, file)
+            tasks[task] = file
+        for future in as_completed(tasks):
+            g = tasks[future]
+            try:
+                g, graph_name, graph_dict, cleared_dict = future.result()
+            except Exception as ex:
+                print('%r generated an exception: %s' % (g, ex))
+                traceback.print_exc(ex)
+            else:
+                write_to_file(g, graph_name, graph_dict)
+                cleared_dicts[graph_name] = cleared_dict
+
+    create_dataframe(cleared_dicts).to_latex("table.tex")
+
 
 if __name__ == '__main__':
 
-    graph_path = './resources/dataset/'
-
-    cleared_dict = dict()
-    for file in [f for f in os.listdir(graph_path) if f.startswith('CA-')]:
-        graph_name = file.split('.')[0]
-        full_graph_path = os.path.join('.', 'resources', 'dataset', file)
-        logger.info("Loading " + graph_name)
-        g = loader.load(full_graph_path, is_directed=False, sep=" ")
-        logger.info("Starting analysis on " + graph_name)
-        graph_dict = ga.GraphAnalyser(g).get_properties()
-
-        influence_dict = dict()
-        logger.info("Influence Targer Set Selection on median on " + graph_name)
-        influence_dict['Median'] = list(influence.generate_target_set_selection(g, graph_dict['properties']['Median']))
-        logger.info("Influence Targer Set Selection on 60th percentile on " + graph_name)
-        influence_dict['60th Percentile'] = list(influence.generate_target_set_selection(g, graph_dict['properties']['60th Percentile']))
-        logger.info("Influence Targer Set Selection on 70th percentile on " + graph_name)
-        influence_dict['70th Percentile'] = list(influence.generate_target_set_selection(g, graph_dict['properties']['70th Percentile']))
-
-        graph_dict['target set'] = influence_dict
-
-        # Powerlaw graph
-        logger.info("Plotting Power Law")
-        plot_degree_powerlaw_distribution(g, graph_name)
-
-        with open('./resources/results/{}.json'.format(graph_name), 'w+') as f:
-            json.dump(graph_dict, f, indent=0)
-            logger.info("dirty-{}.json saved".format(graph_name))
-
-        cleared_dict[graph_name] = clear_dict(graph_dict)
-
-    create_dataframe(cleared_dict).to_latex("table.tex")
+    main()
