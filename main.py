@@ -55,7 +55,7 @@ def clear_dict(d):
     nd["Connected Components Count"] = len(d["connected components"])
     nd["Pagerank Max"] = max(d["pagerank"].values())
     nd["Pagerank Max Id"] = max(d["pagerank"], key=d["pagerank"].get)
-    nd["Pagerank Min"] = max(d["pagerank"].values())
+    nd["Pagerank Min"] = min(d["pagerank"].values())
     nd["Pagerank Min Id"] = min(d["pagerank"], key=d["pagerank"].get)
     nd["Pagerank Avg"] = sum(d["pagerank"].values())/len(d["pagerank"])
     return nd
